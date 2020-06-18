@@ -10,4 +10,5 @@ if __name__ == '__main__':
     noticias_bot.esperar_comando("start", noticias_bot.start)
     noticias_bot.esperar_comando("ayuda", noticias_bot.ayuda)
     noticias_bot.esperar_comando("top5", noticias_bot.top_noticias)
-    noticias_bot.esperar_mensaje()
+    noticias_bot.esperar_comando("seccion", noticias_bot.noticia_por_tema)
+    noticias_bot.contestar_mensaje(noticias_bot.noticia_por_mensaje)

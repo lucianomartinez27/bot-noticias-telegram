@@ -45,10 +45,11 @@ class BotNoticias(BotTelegram):
     def top_noticias(self, update, context):
         """ Devuelve las 5 noticias más importantes del momento en Argentina"""
         self.logger.info('He recibido el comando top5')
+        
         top5_noticias = newsapi.get_top_headlines(
-                                          language='es',
-                                          country='ar',
-                                          page_size=5)
+                                        language='es',
+                                        country='ar',
+                                        page_size=5)
         for articulo in top5_noticias['articles']:
                 context.bot.send_message(
                 chat_id = update.message.chat_id,
@@ -56,6 +57,63 @@ class BotNoticias(BotTelegram):
                 context.bot.send_message(
                 chat_id = update.message.chat_id,
                 text = tinyurl(articulo['url']))
+        
 
-    #def noticia_por_tema(self, tema):
+    def noticia_por_tema(self, update, context):
         #"""Devuelve las 5 noticias más relevantes para el tema que se elija"""
+        self.logger.info('He recibido el comando top_tema')
+        if context.args[0].lower() == 'entretenimiento':
+            tema = 'entertainment'
+        elif context.args[0].lower() == 'ciencia':
+            tema = 'science'
+        elif context.args[0].lower() == 'deportes':
+            tema = 'sports'
+        elif context.args[0].lower() == 'salud':
+            tema = 'health'
+        elif context.args[0].lower() == 'deportes':
+            tema = 'sports'
+        elif context.args[0].lower() in ['tecnología', 'tecnologia']:
+            tema = 'technology'
+
+
+        try:
+            top5_noticias = newsapi.get_top_headlines(
+                                            language='es',
+                                            country='ar',
+                                            page_size=5,
+                                            category=tema)
+            for articulo in top5_noticias['articles']:
+                context.bot.send_message(
+                chat_id = update.message.chat_id,
+                text = "Título: {} \nAutor: {} \n {}".format(articulo['title'], articulo['author'], articulo['description']))
+                context.bot.send_message(
+                    chat_id = update.message.chat_id,
+                    text = tinyurl(articulo['url']))
+        except:
+            context.bot.send_message(
+                chat_id = update.message.chat_id,
+                text = "Lo siento, no reconozco esa sección.")
+        
+    def noticia_por_mensaje(self, update, context):
+        """ Intenta devolver al usuario 5 noticias relacionadas con el texto que escriba """
+        mensaje = update.message.text
+        self.logger.info('He recibido el mensaje mensaje "{}"'.format(update.message.text))
+        top5_noticias = newsapi.get_top_headlines(
+                                        q=mensaje,
+                                        language='es',
+                                        country='ar',
+                                        page_size=5,
+                                        )
+        print(top5_noticias)
+        if top5_noticias['articles']:
+            for articulo in top5_noticias['articles']:
+                    context.bot.send_message(
+                    chat_id = update.message.chat_id,
+                    text = "Título: {} \nAutor: {} \n {}".format(articulo['title'], articulo['author'], articulo['description']))
+                    context.bot.send_message(
+                        chat_id = update.message.chat_id,
+                        text = tinyurl(articulo['url']))
+        else:
+            context.bot.send_message(
+                    chat_id = update.message.chat_id,
+                    text = "Lo siento, no pude encontrar noticias relacionadas a '{}'.".format(mensaje))
