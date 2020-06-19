@@ -38,10 +38,10 @@ class BotNoticias(BotTelegram):
         context.bot.send_message(
             chat_id = update.message.chat_id,
             text = """Los comandos que pueden ayudarte son:
-        /seccion - "Busca las noticias por sección"
-        /clima - "Te proporcina los dos climáticos en argentina"
-        /top5 - "Devuelve las 5 noticias más relevantes del momento"
-            """)
+        /seccion - Busca las noticias por sección
+        /clima - Te proporcina los dos climáticos en argentina (Próximamente)
+        /top5 - Devuelve las 5 noticias más relevantes del momento """)
+
     def top_noticias(self, update, context):
         """ Devuelve las 5 noticias más importantes del momento en Argentina"""
         self.logger.info('He recibido el comando top5')
@@ -50,19 +50,24 @@ class BotNoticias(BotTelegram):
                                         language='es',
                                         country='ar',
                                         page_size=5)
-        for articulo in top5_noticias['articles']:
-                context.bot.send_message(
-                chat_id = update.message.chat_id,
-                text = "Título: {} \nAutor: {} \n {}".format(articulo['title'], articulo['author'], articulo['description']))
+        for articulo in top5_noticias['articles']:  
                 context.bot.send_message(
                 chat_id = update.message.chat_id,
                 text = tinyurl(articulo['url']))
+                context.bot.send_message(
+                chat_id = update.message.chat_id,
+                text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
         
-
     def noticia_por_tema(self, update, context):
-        #"""Devuelve las 5 noticias más relevantes para el tema que se elija"""
+        """Devuelve las 5 noticias más relevantes para el tema que se elija"""
         self.logger.info('He recibido el comando top_tema')
-        if context.args[0].lower() == 'entretenimiento':
+
+        if not context.args:
+            context.bot.send_message(
+                chat_id = update.message.chat_id,
+                text = "Las secciones disponibles son 'entretenimiento', 'ciencia', 'deportes', 'tecnología, 'salud'")
+            return None
+        elif context.args[0].lower() == 'entretenimiento':
             tema = 'entertainment'
         elif context.args[0].lower() == 'ciencia':
             tema = 'science'
@@ -74,7 +79,6 @@ class BotNoticias(BotTelegram):
             tema = 'sports'
         elif context.args[0].lower() in ['tecnología', 'tecnologia']:
             tema = 'technology'
-
 
         try:
             top5_noticias = newsapi.get_top_headlines(
@@ -96,23 +100,22 @@ class BotNoticias(BotTelegram):
         
     def noticia_por_mensaje(self, update, context):
         """ Intenta devolver al usuario 5 noticias relacionadas con el texto que escriba """
-        mensaje = update.message.text
+        mensaje = update.message.text.lower()
         self.logger.info('He recibido el mensaje mensaje "{}"'.format(update.message.text))
-        top5_noticias = newsapi.get_top_headlines(
+        top5_noticias = newsapi.get_everything(
                                         q=mensaje,
                                         language='es',
-                                        country='ar',
                                         page_size=5,
                                         )
-        print(top5_noticias)
+
         if top5_noticias['articles']:
             for articulo in top5_noticias['articles']:
                     context.bot.send_message(
-                    chat_id = update.message.chat_id,
-                    text = "Título: {} \nAutor: {} \n {}".format(articulo['title'], articulo['author'], articulo['description']))
-                    context.bot.send_message(
                         chat_id = update.message.chat_id,
                         text = tinyurl(articulo['url']))
+                    context.bot.send_message(
+                    chat_id = update.message.chat_id,
+                    text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
         else:
             context.bot.send_message(
                     chat_id = update.message.chat_id,

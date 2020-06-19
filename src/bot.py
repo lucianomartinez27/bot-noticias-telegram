@@ -19,10 +19,11 @@ class BotTelegram:
     """
     def __init__(self, nombre, token):
         """Inicializa las variables básicas para que el bot de Telegram funcione"""
+        # loggin: Sirve para enviar un registro de las actividades.
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger(nombre)
         self.level = logging.INFO
-         # Updater: es el encargado de contestar a los comandos que envíe el usuario.
+        # Updater: es el encargado de contestar a los comandos que envíe el usuario.
         self.updater = Updater(token=token, use_context=True)
         # Está a la espera de que se ingresen comandos
         self.updater.start_polling()
@@ -38,7 +39,7 @@ class BotTelegram:
         self.dispatcher.add_handler(CommandHandler(nombre, comando))
     
     def contestar_mensaje(self, funcion):
-        """ Espera cualquier cosa en el chat que no sea un comando """ 
+        """ Espera cualquier cosa en el chat que no sea un comando (mensajes)""" 
         mensaje_recibido = MessageHandler(Filters.text & (~Filters.command), funcion)
         self.dispatcher.add_handler(mensaje_recibido)
 
