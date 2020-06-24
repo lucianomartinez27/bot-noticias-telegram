@@ -39,8 +39,10 @@ class BotNoticias(BotTelegram):
             chat_id = update.message.chat_id,
             text = """Los comandos que pueden ayudarte son:
         /seccion - Busca las noticias por sección
-        /clima - Te proporcina los dos climáticos en argentina (Próximamente)
-        /top5 - Devuelve las 5 noticias más relevantes del momento """)
+        /clima - Te proporciona los dos climáticos en argentina (Próximamente)
+        /top5 - Devuelve las 5 noticias más relevantes del momento
+        
+        Además, escribiendo palabras claves, recibes una noticia relacionada a ese palabra. """)
 
     def top_noticias(self, update, context):
         """ Devuelve las 5 noticias más importantes del momento en Argentina"""
@@ -75,18 +77,16 @@ class BotNoticias(BotTelegram):
             tema = 'sports'
         elif context.args[0].lower() == 'salud':
             tema = 'health'
-        elif context.args[0].lower() == 'deportes':
-            tema = 'sports'
         elif context.args[0].lower() in ['tecnología', 'tecnologia']:
             tema = 'technology'
 
         try:
-            top5_noticias = newsapi.get_top_headlines(
+            top5_noticias_tema = newsapi.get_top_headlines(
                                             language='es',
                                             country='ar',
                                             page_size=5,
                                             category=tema)
-            for articulo in top5_noticias['articles']:
+            for articulo in top5_noticias_tema['articles']:
                 context.bot.send_message(
                 chat_id = update.message.chat_id,
                 text = "Título: {} \nAutor: {} \n {}".format(articulo['title'], articulo['author'], articulo['description']))
@@ -99,23 +99,25 @@ class BotNoticias(BotTelegram):
                 text = "Lo siento, no reconozco esa sección.")
         
     def noticia_por_mensaje(self, update, context):
-        """ Intenta devolver al usuario 5 noticias relacionadas con el texto que escriba """
+        """ Devuelve al usuario una noticia relacionadas con el texto que escriba, si las encuentra. """
+        self.logger.info('He recibido un mensaje')
+
+        # Recolecta una noticia mediante la api
         mensaje = update.message.text.lower()
-        self.logger.info('He recibido el mensaje mensaje "{}"'.format(update.message.text))
-        top5_noticias = newsapi.get_everything(
+        noticias_mensaje = newsapi.get_everything(
                                         q=mensaje,
                                         language='es',
                                         page_size=5,
                                         )
 
-        if top5_noticias['articles']:
-            for articulo in top5_noticias['articles']:
+        if noticias_mensaje['articles']:
+            for articulo in noticias_mensaje['articles']:
                     context.bot.send_message(
                         chat_id = update.message.chat_id,
                         text = tinyurl(articulo['url']))
                     context.bot.send_message(
-                    chat_id = update.message.chat_id,
-                    text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
+                        chat_id = update.message.chat_id,
+                        text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
         else:
             context.bot.send_message(
                     chat_id = update.message.chat_id,

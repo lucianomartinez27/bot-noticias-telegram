@@ -9,11 +9,12 @@ Estos códigos deben colocarse en un archivo llamado 'keys.py', en una carpeta l
 
 La estructora de keys.py es la siguiente:
 
+```
 TOKEN_TELEGRAM = "TOKEN"
 API_NEWS_KEY = "KEY"
-
+```
 
 ### Requirements
     * python-telegram-bot
     * pyshorteners
-    * newsapi
+    * newsapi-python
