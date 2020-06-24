@@ -2,9 +2,9 @@
 #-*- coding: utf-8 -*-
 
 # Librerias telegram
-from telegram.ext import Updater
-from telegram.ext import CommandHandler
-from telegram.ext import MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+
+# Registro de actividades
 import logging
 
 # Import KEYS API
@@ -22,10 +22,9 @@ class BotTelegram:
         # loggin: Sirve para enviar un registro de las actividades.
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger(nombre)
-        self.level = logging.INFO
         # Updater: es el encargado de contestar a los comandos que envíe el usuario.
         self.updater = Updater(token=token, use_context=True)
-        # Está a la espera de que se ingresen comandos
+        # Polling se pone a la espera de que se ingresen comandos
         self.updater.start_polling()
         # Dispatcher: está al pendiente de todas las ventanas donde se encuentra el bot.
         self.dispatcher = self.updater.dispatcher
@@ -38,16 +37,15 @@ class BotTelegram:
         """
         self.dispatcher.add_handler(CommandHandler(nombre, comando))
     
+    def contestar_consulta(self, funcion):
+        """Función que espera que el usuario presione un botón que se despliega en el chat de telegram
+        Parametro:
+        funcion (func): función que se ejecuta al presionar un botón en el chat"""
+        self.dispatcher.add_handler(CallbackQueryHandler(funcion))
+    
     def contestar_mensaje(self, funcion):
-        """ Espera cualquier cosa en el chat que no sea un comando (mensajes)""" 
+        """ Espera cualquier cosa en el chat que no sea un comando (mensajes)
+        Parametro:
+        funcion (func): función que se ejecuta al recibir un mensaje en el chat""" 
         mensaje_recibido = MessageHandler(Filters.text & (~Filters.command), funcion)
         self.dispatcher.add_handler(mensaje_recibido)
-
-
-        
-    
-        
-
-
-
-
