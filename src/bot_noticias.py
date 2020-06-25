@@ -60,11 +60,9 @@ class BotNoticias(BotTelegram):
                                         page_size=5)
         for articulo in top5_noticias['articles']:  
                 context.bot.send_message(
+                parse_mode = 'Markdown',
                 chat_id = update.message.chat_id,
-                text = tinyurl(articulo['url']))
-                context.bot.send_message(
-                chat_id = update.message.chat_id,
-                text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
+                text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
 
     def seccion(self, update, context):
         """Genera una botonera para que el usuario seleccione la opción que desea ingresar"""
@@ -94,11 +92,9 @@ class BotNoticias(BotTelegram):
                                             category=tema)
             for articulo in top3_noticias_tema['articles']:
                 context.bot.send_message(
+                parse_mode = 'Markdown',
                 chat_id = query.message.chat_id,
-                text = tinyurl(articulo['url']))
-                context.bot.send_message(
-                chat_id = query.message.chat_id,
-                text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
+                text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
         except:
             query.edit_message_text(text= "Lo siento. Ocurrió un error intesperado.")
         
@@ -117,11 +113,9 @@ class BotNoticias(BotTelegram):
         if noticias_mensaje['articles']:
             for articulo in noticias_mensaje['articles']:
                     context.bot.send_message(
-                        chat_id = update.message.chat_id,
-                        text = tinyurl(articulo['url']))
-                    context.bot.send_message(
-                        chat_id = update.message.chat_id,
-                        text = "Título: {} \nAutor: {}".format(articulo['title'], articulo['author']))
+                parse_mode = 'Markdown',
+                chat_id = update.message.chat_id,
+                text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
         else:
             context.bot.send_message(
                     chat_id = update.message.chat_id,
@@ -137,11 +131,11 @@ class BotNoticias(BotTelegram):
                                             country='ar',
                                             page_size=100)
         palabras_clave = []
-        palabras_a_descartar = "para como entre desde este esta días lunes martes miércoles \
-        jueves viernes sábado domingo chars] nuevo nueva nuevos nuevas comenzó terminó casos \
-        cuando porque quien durante después menos inicio final cerca pero  mientras contra \
+        palabras_a_descartar = "para como entre desde este esta estas estos días lunes martes \
+        miércoles jueves viernes sábado domingo chars] nuevo nueva nuevos nuevas comenzó terminó  \
+        casos cuando porque quien durante después menos inicio final cerca pero  mientras contra \
         tambien está podría podrían será hasta ahora según luego donde tiene tienen gran \
-        infobae ambito clarín crónica todo noticias".split()
+        otro otra otros otras infobae ambito clarín crónica todo noticias".split()
 
         # Recorremos los artículos y luego su descripción, título y contenido.
         for articulo in noticias_tt['articles']:
