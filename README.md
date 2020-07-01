@@ -13,8 +13,11 @@ La estructura de keys.py es la siguiente:
 TOKEN_TELEGRAM = "TOKEN"
 API_NEWS_KEY = "KEY"
 ```
+### Enlaces útiles:
+* [Documentación Python-Telegram-Bot](https://python-telegram-bot.readthedocs.io/en/stable/)
+* [Bots de Telegram en Python - Medium](https://medium.com/@goyoregalado/bots-de-telegram-en-python-134b964fcdf7)
 
-### Requirements
+#### Requirements
     * python-telegram-bot
     * pyshorteners
     * newsapi-python
