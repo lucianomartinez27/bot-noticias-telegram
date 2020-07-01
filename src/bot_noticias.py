@@ -19,7 +19,7 @@ from newsapi import NewsApiClient
 from pyshorteners import Shortener
 
 # Importamos funcion para filtrar palabras comunes en /tt
-from palabras_regex import encontrar_palabras_archivo, encontrar_palabras_string
+from regex.palabras_regex import encontrar_palabras_archivo, encontrar_palabras_string
 
 # Init NEWSAPI
 newsapi = NewsApiClient(api_key=API_NEWS_KEY)
@@ -42,7 +42,7 @@ class BotNoticias(BotTelegram):
         )
 
     def ayuda(self, update, context):
-        """ Muestra los comandos más importantes """
+        """ Muestra los comandos más importantes. """
         self.logger.info('He recibido el comando ayuda')
         context.bot.send_message(
             chat_id = update.message.chat_id,
@@ -54,7 +54,7 @@ class BotNoticias(BotTelegram):
         Además, escribiendo palabras claves, recibes una noticia relacionada a ese palabra. """)
 
     def top_noticias(self, update, context):
-        """ Devuelve las 5 noticias más importantes del momento en Argentina"""
+        """ Devuelve las 5 noticias más importantes del momento en Argentina."""
         self.logger.info('He recibido el comando top5')
         
         top5_noticias = newsapi.get_top_headlines(
@@ -89,19 +89,16 @@ class BotNoticias(BotTelegram):
         # Botón que presiona el usuario desde la app
         tema = query.data
 
-        try:
-            top3_noticias_tema = newsapi.get_top_headlines(
-                                            language='es',
-                                            country='ar',
-                                            page_size=3,
-                                            category=tema)
-            for articulo in top3_noticias_tema['articles']:
-                context.bot.send_message(
-                parse_mode = 'Markdown',
-                chat_id = query.message.chat_id,
-                text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
-        except:
-            query.edit_message_text(text= "Lo siento. Ocurrió un error intesperado.")
+        top3_noticias_tema = newsapi.get_top_headlines(
+                                        language='es',
+                                        country='ar',
+                                        page_size=3,
+                                        category=tema)
+        for articulo in top3_noticias_tema['articles']:
+            context.bot.send_message(
+            parse_mode = 'Markdown',
+            chat_id = query.message.chat_id,
+            text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
         
     def noticia_por_mensaje(self, update, context):
         """ Devuelve al usuario tres noticias relacionadas con el texto que escriba, si las encuentra. """
@@ -115,7 +112,7 @@ class BotNoticias(BotTelegram):
                                         country = 'ar',
                                         page_size=3,
                                         )
-
+        # Comprueba que haya al menos una noticia.
         if noticias_mensaje['articles']:
             for articulo in noticias_mensaje['articles']:
                 context.bot.send_message(
@@ -137,23 +134,23 @@ class BotNoticias(BotTelegram):
                                             country='ar',
                                             page_size=100)
         
-        medios = ["infobae", "clarín", "telefé" ,"telefenoticias", "chars", "com"]
-        palabras_comunes = encontrar_palabras_archivo("src/10000_formas.txt", 5000)
+        # Palabras que no queremos ver entre los trend topics.
+        medios = ["infobae", "clarín", "telefé" ,"telefenoticias", "mdz", "chars", "com"]
+        palabras_comunes = encontrar_palabras_archivo("src/10000_formas_RAE.txt", 5000)
         palabras_a_descartar = palabras_comunes + medios
-        palabras_clave = []
 
-        # Recorremos los artículos y luego su descripción, título y contenido.
+        # Recorremos los artículos y luego su descripción, título y contenido, obteniendo el texto.
+        # Agregamos las palabras a la lista palabras_clave.
+        palabras_clave = []
         for articulo in noticias_tt['articles']:
             cadena = "{} {} {}".format(articulo['description'], articulo['title'], articulo['content'] )
             contenido = encontrar_palabras_string(cadena)
             for palabra in contenido:
                 if palabra.lower() not in palabras_a_descartar:
-                    palabras_clave.append(palabra) # Añadimos las palabras que cumplen las condiciones.
+                    palabras_clave.append(palabra.title()) # Añadimos las palabras que cumplen las condiciones.
 
         # Crea un objeto de tipo Counter de la clase collections para contar las palabras más usadas.
-        cantidad_palabras = Counter()
-        for palabra in palabras_clave:
-            cantidad_palabras[palabra.title()] += 1
+        cantidad_palabras = Counter(palabras_clave)
         temas_tt = ""
         for tema in enumerate(cantidad_palabras.most_common(10), 1): # Elige los 10 temas mas mencionados en las noticas.
             temas_tt += f"{tema[0]} - {tema[1][0]}\n" # Número y tema.
