@@ -18,6 +18,9 @@ from newsapi import NewsApiClient
 # Import acortador de URL
 from pyshorteners import Shortener
 
+# Importamos funcion para filtrar palabras comunes en /tt
+from palabras_regex import encontrar_palabras_archivo, encontrar_palabras_string
+
 # Init NEWSAPI
 newsapi = NewsApiClient(api_key=API_NEWS_KEY)
 
@@ -81,7 +84,9 @@ class BotNoticias(BotTelegram):
         """Devuelve al usuario 3 noticias según la opción el elija mediante la función seccion"""
         self.logger.info('He recibido el comando noticia_por_tema')
 
+        # Objeto que devuelve Telegram
         query = update.callback_query
+        # Botón que presiona el usuario desde la app
         tema = query.data
 
         try:
@@ -104,22 +109,23 @@ class BotNoticias(BotTelegram):
 
         # Recolecta una noticia mediante la api
         mensaje = update.message.text.lower()
-        noticias_mensaje = newsapi.get_everything(
+        noticias_mensaje = newsapi.get_top_headlines(
                                         q=mensaje,
                                         language='es',
+                                        country = 'ar',
                                         page_size=3,
                                         )
 
         if noticias_mensaje['articles']:
             for articulo in noticias_mensaje['articles']:
-                    context.bot.send_message(
+                context.bot.send_message(
                 parse_mode = 'Markdown',
                 chat_id = update.message.chat_id,
                 text = "Título: [{}]({}) \nAutor: {}".format(articulo['title'],tinyurl(articulo['url']), articulo['author']))
         else:
             context.bot.send_message(
-                    chat_id = update.message.chat_id,
-                    text = "Lo siento, no pude encontrar noticias relacionadas a '{}'.".format(mensaje))
+                chat_id = update.message.chat_id,
+                text = "Lo siento, no pude encontrar noticias relacionadas a '{}'.".format(mensaje))
     
     def trend_topics(self, update, context):
         """"Devuelve cuales son los temás más escritos en las noticias nacionales."""
@@ -130,29 +136,27 @@ class BotNoticias(BotTelegram):
                                             language='es',
                                             country='ar',
                                             page_size=100)
+        
+        medios = ["infobae", "clarín", "telefé" ,"telefenoticias", "chars", "com"]
+        palabras_comunes = encontrar_palabras_archivo("src/10000_formas.txt", 5000)
+        palabras_a_descartar = palabras_comunes + medios
         palabras_clave = []
-        palabras_a_descartar = "para como entre desde este esta estas estos días lunes martes \
-        miércoles jueves viernes sábado domingo chars] nuevo nueva nuevos nuevas comenzó terminó  \
-        casos cuando porque quien durante después menos inicio final cerca pero  mientras contra \
-        tambien está podría podrían será hasta ahora según luego donde tiene tienen gran \
-        otro otra otros otras infobae ambito clarín crónica todo noticias".split()
 
         # Recorremos los artículos y luego su descripción, título y contenido.
         for articulo in noticias_tt['articles']:
-            # El if revisa que las secciones no estén vacías, ya que daría error al hacer split().
-            if articulo['description'] and articulo['title'] and articulo['content']:
-                contenido = articulo['description'].split() + articulo['title'].split() + articulo['content'].split()
-                for palabra in contenido:
-                    if palabra.lower() not in palabras_a_descartar and "." not in palabra and len(palabra) > 3:
-                        palabras_clave.append(palabra) # Añadimos las palabras que cumplen las condiciones.
+            cadena = "{} {} {}".format(articulo['description'], articulo['title'], articulo['content'] )
+            contenido = encontrar_palabras_string(cadena)
+            for palabra in contenido:
+                if palabra.lower() not in palabras_a_descartar:
+                    palabras_clave.append(palabra) # Añadimos las palabras que cumplen las condiciones.
 
         # Crea un objeto de tipo Counter de la clase collections para contar las palabras más usadas.
         cantidad_palabras = Counter()
         for palabra in palabras_clave:
             cantidad_palabras[palabra.title()] += 1
         temas_tt = ""
-        for elemento in enumerate(cantidad_palabras.most_common(10), 1): # Elige los 10 temas mas mencionados en las noticas.
-            temas_tt += f"{elemento[0]} - {elemento[1][0]}\n"
+        for tema in enumerate(cantidad_palabras.most_common(10), 1): # Elige los 10 temas mas mencionados en las noticas.
+            temas_tt += f"{tema[0]} - {tema[1][0]}\n" # Número y tema.
         context.bot.send_message(
                     chat_id = update.message.chat_id,
                     text = "Los temas del momento son:\n{}".format(temas_tt))
