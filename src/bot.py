@@ -2,23 +2,21 @@
 #-*- coding: utf-8 -*-
 
 # Librerias telegram
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from telegram.ext import Updater, MessageHandler, Filters, CallbackQueryHandler
 
 # Registro de actividades
 import logging
 
-# Import KEYS API
-from config.keys import TOKEN_TELEGRAM
 
 class BotTelegram:
-    """ Crea un objeto Bot para telegram.
+    """Clase base para crear instancias de un Bot de Telegram
 
-    Parametros:
-    nombre (str): Nombre que tiene el bot.
+        >>> MiBot = BotTelegram(nombre, token)
 
     """
+
     def __init__(self, nombre, token):
-        """Inicializa las variables básicas para que el bot de Telegram funcione"""
+        """Inicializa las variables básicas para que el bot de Telegram funcione."""
         # loggin: Sirve para enviar un registro de las actividades.
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         self.logger = logging.getLogger(nombre)
@@ -28,15 +26,36 @@ class BotTelegram:
         self.updater.start_polling()
         # Dispatcher: está al pendiente de todas las ventanas donde se encuentra el bot.
         self.dispatcher = self.updater.dispatcher
+        # Diccionario con los comandos que va a ejecutar el bo
+        self.comandos = {}
         
-    def esperar_comando(self, nombre = None, comando = None):
+    def enviar_mensaje(self, bot, id_usuario, mensaje, parse_mode=None):
+        """Función que envía un mensaje desde un bot y a un usuario en particular.
+        Parámetros:
+        bot: --completar
+        usuario: id de telegram del usuario
+        text: mensaje a enviar
+        parse_mode:"""
+        bot.send_message(chat_id=id_usuario, text=mensaje, parse_mode=parse_mode)
+
+    def ejecutar_comando(self, update, context):
+        """Intenta ejecutar un comando de el diccionario 'comandos' cuando lo ingresa por el chat.
+            Si no lo encuentra, se captura la excepción y se informa al usuario de que no existe."""
+        bot = context.bot
+        usuario = update.message
+        comando = update.message.text
+
+        try:
+            self.comandos[comando](bot, usuario)
+        except KeyError:
+            self.enviar_mensaje(bot, usuario.chat_id, "Comando no disponible.")
+        
+    def esperar_comando(self):
         """ Función que espera que un comando se ingrese en el chat de telegram.
-        Parametros:
-        nombre (str): nombre del comando que el usuario escibe en el chat ejm: 'start'.
-        comando (func): función que se ejecutará al llamar al comando.
         """
-        self.dispatcher.add_handler(CommandHandler(nombre, comando))
-    
+        comando = MessageHandler(Filters.command, self.ejecutar_comando)
+        self.dispatcher.add_handler(comando)
+          
     def contestar_consulta(self, funcion):
         """Función que espera que el usuario presione un botón que se despliega en el chat de telegram
         Parametro:
