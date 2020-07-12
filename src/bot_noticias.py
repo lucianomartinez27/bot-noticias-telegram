@@ -19,36 +19,45 @@ acortar_url = Shortener().tinyurl.short
 
 class BotDeNoticiasPorTelegram(BotTelegram):
     """Clase que hereda de BotTelegram, añadiendo los métodos para un bot de noticias Argentinas
-        >>> MiBotDeNoticias = BotTelegram(nombre, token)"""
+        >>> MiBotDeNoticias = BotDeNoticiasPorTelegram(nombre, token)
+    """
 
     def __init__(self, nombre, token):
         BotTelegram.__init__(self, nombre, token)
-        self.canillita = Canillita()
-        self.comandos = {"/start": self.start, "/ayuda": self.ayuda, "/top5": self.top5, "/tt": self.trend_topics,
-                         "/seccion": self.secciones}
-        self.contestar_consulta(self.noticia_por_seccion)
-        self.contestar_mensaje(self.noticia_por_mensaje)
-        self.esperar_comando()
+        self.canillita = Canillita()  # Ayudante para buscar noticias.
 
-    def enviar_noticias(self, bot, id_usuario, noticias):
+    def enviar_noticias(self, bot, usuario, noticias):
+        """Formatea y envía las noticias que recibe en formato.
+        Parámetros:
+            bot: objecto Bot de la librería python-telegram-bot
+                Tipo: telegram.bot
+            usuario: id de telegram.
+                Tipo: (int)
+            noticias: noticias obtenidas con el módulo Canillita.
+                Tipo: (dict)
+        """
         if noticias['articles']:
             for articulo in noticias['articles']:
                 mensaje = "Título: [{}]({}) \nAutor: {}".format(articulo['title'], acortar_url(articulo['url']),
                                                                 articulo['author'])
-                self.enviar_mensaje(bot, id_usuario, mensaje, 'Markdown')
+                self.enviar_mensaje(bot, usuario, mensaje, 'Markdown')
         else:
             mensaje = "Lo siento, no pude encontrar ninguna noticia."
-            self.enviar_mensaje(bot, id_usuario, mensaje)
+            self.enviar_mensaje(bot, usuario, mensaje)
 
-    def start(self, bot, usuario):
+    def start(self, update, context):
         """ Esta función realiza una presentación cuando se ejecuta el comando '/start'."""
         self.logger.info('He recibido el comando start')
 
         mensaje = "Bienvenido al Bot de Noticias de Argentina, puedes usar '/ayuda' \npara ver todos los comandos."
-        self.enviar_mensaje(bot, usuario.chat_id, mensaje)
+        # Datos que devuelve Telegram
+        bot = context.bot
+        usuario = update.message.chat_id
 
-    def ayuda(self, bot, usuario):
-        """ Muestra los comandos más importantes. """
+        self.enviar_mensaje(bot, usuario, mensaje)
+
+    def ayuda(self, update, context):
+        """ Muestra al usuario los comandos más importantes."""
         self.logger.info('He recibido el comando ayuda')
 
         mensaje = """Los comandos que pueden ayudarte son:
@@ -57,18 +66,29 @@ class BotDeNoticiasPorTelegram(BotTelegram):
                     /top5 - Devuelve las 5 noticias más relevantes del momento
                     Además, escribiendo palabras claves, recibes una noticia relacionada a ese palabra.
                 """
-        self.enviar_mensaje(bot, usuario.chat_id, mensaje)
+        # Datos que devueve Telegram
+        bot = context.bot
+        usuario = update.message.chat_id
 
-    def top5(self, bot, usuario):
+        self.enviar_mensaje(bot, usuario, mensaje)
+
+    def top5(self, update, context):
         """ Devuelve las 5 noticias más importantes del momento en Argentina."""
         self.logger.info('He recibido el comando top5')
 
+        # Datos que devuelve telegram
+        bot = context.bot
+        usuario = update.message.chat_id
         # Recolección y envío de noticias
         top5_noticias = self.canillita.pedir_noticias(cantidad=5)
-        self.enviar_noticias(bot, usuario.chat_id, top5_noticias)
+        self.enviar_noticias(bot, usuario, top5_noticias)
 
-    def trend_topics(self, bot, usuario):
-        """"Devuelve cuales son los temás más escritos en las noticias nacionales."""
+    def trend_topics(self, update, context):
+        """"Devuelve cuales son los temás más escritos en las noticias nacionales.
+            Parámetros:
+                bot (cls Bot): objeto Bot de el módulo telegram
+                usuario (int): id de telegram del usuario
+        """
         self.logger.info('He recibido el comando trend topics')
 
         # Búsqueda de temas del día y envío de mensaje
@@ -76,30 +96,41 @@ class BotDeNoticiasPorTelegram(BotTelegram):
         temas_tt = ""
         for pos, tema in enumerate(temas_del_dia, 1): # Elige los 10 temas mas mencionados en las noticas.
             temas_tt += f"{pos} - {tema[0]}\n" # posición y tema.
+
         mensaje = "Los temas del momento son:\n {}".format(temas_tt)
-        self.enviar_mensaje(bot, usuario.chat_id, mensaje)
+        # Datos que devuelve Telegram
+        bot = context.bot
+        usuario = update.message.chat_id
 
-    def secciones(self, bot, usuario):
-        """Genera una botonera para que el usuario seleccione la opción que desea ingresar"""
+        self.enviar_mensaje(bot, usuario, mensaje)
+
+    def secciones(self, update, context):
+        """Genera una botonera para que el usuario seleccione la opción que desea ingresar.
+        Parámetros:
+            bot (cls Bot): objeto Bot de el módulo telegram
+            usuario (int): id de telegram del usuario
+        """
         self.logger.info('He recibido el comando seccion')
-
+        # Botones que aparecerán al usuario, el primer parámetro texto visible, el segundo el retorno.
         opciones = [[InlineKeyboardButton("Entretenimiento", callback_data='entertainment'),
                     InlineKeyboardButton("Salud", callback_data='health')],
                     [InlineKeyboardButton("Ciencia", callback_data='science'),
                     InlineKeyboardButton("Tecnología", callback_data='technology')],
                     [InlineKeyboardButton("Deportes", callback_data='sports'),
                     InlineKeyboardButton("Negocios", callback_data='business')]]
-
         botones = InlineKeyboardMarkup(opciones)
+        usuario = update.message
         usuario.reply_text('Elija una de las secciones:', reply_markup=botones)
         
     def noticia_por_seccion(self, update, context):
-        """Devuelve al usuario 3 noticias según la opción el elija mediante la función seccion"""
+        """Devuelve al usuario 3 noticias según la opción el elija mediante la función seccion."""
         self.logger.info('He recibido el comando noticia_por_tema')
 
+        # Datos que devuelve Telegram
         categoria = update.callback_query.data
         usuario = update.callback_query.message.chat_id
         bot = context.bot
+
         # Recolección y envío de noticias
         noticias = self.canillita.pedir_noticias(categoria=categoria)
         self.enviar_noticias(bot, usuario, noticias)

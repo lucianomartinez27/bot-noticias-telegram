@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 
 # Librerias telegram
-from telegram.ext import Updater, MessageHandler, Filters, CallbackQueryHandler
+from telegram.ext import Updater, MessageHandler, CommandHandler, Filters, CallbackQueryHandler
 
 # Registro de actividades
 import logging
@@ -26,45 +26,47 @@ class BotTelegram:
         self.updater.start_polling()
         # Dispatcher: está al pendiente de todas las ventanas donde se encuentra el bot.
         self.dispatcher = self.updater.dispatcher
-        # Diccionario con los comandos que va a ejecutar el bo
-        self.comandos = {}
         
     def enviar_mensaje(self, bot, id_usuario, mensaje, parse_mode=None):
         """Función que envía un mensaje desde un bot y a un usuario en particular.
         Parámetros:
-        bot: --completar
-        usuario: id de telegram del usuario
-        text: mensaje a enviar
-        parse_mode:"""
+            bot: objeto Bot de el módulo telegram.
+                Tipo: telegram.bot
+            usuario: id de telegram del usuario.
+                Tipo: (int)
+            text: mensaje a enviar.
+                Tipo: (str)
+            parse_mode: establece como se 'parsea' el texto enviado.
+                Tipo: (str)
+                Ejm: 'Markdown'; 'HTML'.
+            """
         bot.send_message(chat_id=id_usuario, text=mensaje, parse_mode=parse_mode)
 
-    def ejecutar_comando(self, update, context):
-        """Intenta ejecutar un comando de el diccionario 'comandos' cuando lo ingresa por el chat.
-            Si no lo encuentra, se captura la excepción y se informa al usuario de que no existe."""
-        bot = context.bot
-        usuario = update.message
-        comando = update.message.text
-
-        try:
-            self.comandos[comando](bot, usuario)
-        except KeyError:
-            self.enviar_mensaje(bot, usuario.chat_id, "Comando no disponible.")
-        
-    def esperar_comando(self):
-        """ Función que espera que un comando se ingrese en el chat de telegram.
+    def esperar_comando(self, comando, funcion):
         """
-        comando = MessageHandler(Filters.command, self.ejecutar_comando)
-        self.dispatcher.add_handler(comando)
+        Función que espera que se ingrese en el chat el comando y ejecuta la función que se ingresen como parámetro.
+        Parámetros:
+            comando: texto que colocará el usuario acompañado de una barra '/' en el chat de Telegram..
+                Tipo: (str)
+                Ejemplo: 'start'
+            funcion: función que se ejecutará cuando el usuario realice determinado comando.
+                Tipo: (fn)
+        """
+        self.dispatcher.add_handler(CommandHandler(comando, funcion))
           
     def contestar_consulta(self, funcion):
-        """Función que espera que el usuario presione un botón que se despliega en el chat de telegram
+        """Función que espera que el usuario presione un botón que se despliega en el chat de telegram y ejecuta la
+        función que se pase como parámetro.
         Parametro:
-        funcion (func): función que se ejecuta al presionar un botón en el chat"""
+            funcion: función que se ejecuta al presionar un botón (InlineKeyboardButton) en el chat.
+                Tipo: (fn)"""
         self.dispatcher.add_handler(CallbackQueryHandler(funcion))
     
     def contestar_mensaje(self, funcion):
-        """ Espera cualquier cosa en el chat que no sea un comando (mensajes)
+        """ Espera cualquier cosa en el chat que no sea un comando (mensajes) y ejecuta la función que se pase como
+            parámetro.
         Parametro:
-        funcion (func): función que se ejecuta al recibir un mensaje en el chat""" 
+        funcion: función que se ejecuta al recibir un mensaje en el chat.
+            Tipo:: (fn)"""
         mensaje_recibido = MessageHandler(Filters.text & (~Filters.command), funcion)
         self.dispatcher.add_handler(mensaje_recibido)
