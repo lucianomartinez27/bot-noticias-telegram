@@ -61,8 +61,8 @@ class BotDeNoticiasPorTelegram(BotTelegram):
         self.logger.info('He recibido el comando ayuda')
 
         mensaje = """Los comandos que pueden ayudarte son:
-                    /seccion - Busca las noticias por sección
-                    /tt - Te devuelve las 10 palabras más usadas en las noticias del día.
+                    /secciones - Busca las noticias por sección
+                    /trendtopics - Te devuelve las 10 palabras más usadas en las noticias del día.
                     /top5 - Devuelve las 5 noticias más relevantes del momento
                     Además, escribiendo palabras claves, recibes una noticia relacionada a ese palabra.
                 """
